@@ -42,7 +42,7 @@ if uploaded_file:
     month_cols = [col for col in df.columns if col not in metadata_cols]
 
     st.markdown("### 📅 Available Months in Uploaded File")
-    st.write(", ".join(month_cols))
+    st.write(", ".join([str(m) for m in month_cols]))
 
     # Select month
     selected_month = st.text_input("📆 Enter Month for Analysis (e.g., Apr-24):")
