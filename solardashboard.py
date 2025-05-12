@@ -7,18 +7,18 @@ from io import BytesIO
 # Set Streamlit page config
 st.set_page_config(page_title="Solar Monitoring Dashboard", layout="wide")
 
-# ---------- Utility to encode image ----------
+# ---------- Utility: Image to base64 ----------
 def get_base64_of_image(image_path):
     img = Image.open(image_path)
     buffered = BytesIO()
-    img.save(buffered, format="JPEG")  # JPEG format required, even for .jpg files
+    img.save(buffered, format="JPEG")  # Use JPEG format even if it's .jpg
     return base64.b64encode(buffered.getvalue()).decode()
 
-# ---------- Load images ----------
-logo_base64 = get_base64_of_image("tata_power_logo.jpg")  # Your .jpg logo
+# ---------- Load logo and banner images ----------
+logo_base64 = get_base64_of_image("tata_power_logo.jpg")   # Your .jpg logo
+solar_image = Image.open("solar_panel.jpg")                # Your .jpg solar panel image
 
-
-# ---------- Centered Header ----------
+# ---------- Centered Header with Logo and Title ----------
 st.markdown(
     f"""
     <div style='text-align: center;'>
@@ -30,40 +30,38 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- File Upload ----------
-uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File", type=["xlsx"])
+# ---------- Banner Image ----------
+st.image(solar_image, use_column_width=True)
+
+# ---------- Upload Excel File ----------
+uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
 
 if uploaded_file:
+    # Read Excel
     df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()  # Remove any whitespace in column names
+    df.columns = df.columns.str.strip()  # Remove whitespace from column names
 
-    # Define columns
+    # Identify month columns
     metadata_cols = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
     month_cols = [col for col in df.columns if col not in metadata_cols]
 
-    st.markdown("### 📅 Available Months in Uploaded File")
-    st.write(", ".join([str(m) for m in month_cols]))
+    # Dropdown to select a month
+    selected_month = st.selectbox("📅 Select Month for Analysis", options=sorted(month_cols, key=str))
 
-    # Select month
-    selected_month = st.text_input("📆 Enter Month for Analysis (e.g., Apr-24):")
-
+    # Filter and Display Results
     if selected_month:
-        if selected_month not in df.columns:
-            st.error(f"❌ Month '{selected_month}' not found. Please check the available months above.")
-        else:
-            st.success(f"Showing data for: {selected_month}")
+        st.success(f"Showing results for: {selected_month}")
 
-            # ---------- Zero Generation ----------
-            zero_gen_df = df[df[selected_month] == 0]
-            st.markdown("### ⚠️ Consumers with Zero Generation")
-            st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', selected_month]])
+        # --- Zero Generation ---
+        zero_gen_df = df[df[selected_month] == 0]
+        st.markdown("### ⚠️ Consumers with Zero Generation")
+        st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', selected_month]])
 
-            # ---------- >50% Drop ----------
-            drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
-            st.markdown("### 📉 Consumers with >50% Drop vs Expected Generation")
-            st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
+        # --- >50% Drop ---
+        drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
+        st.markdown("### 📉 Consumers with >50% Drop Compared to Expected Generation")
+        st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
 
-            # ---------- Download Buttons ----------
-            st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
-            st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
-
+        # --- Download Buttons ---
+        st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
+        st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
