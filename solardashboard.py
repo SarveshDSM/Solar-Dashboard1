@@ -6,7 +6,7 @@ from PIL import Image
 st.set_page_config(page_title="Solar Monitoring Dashboard", layout="wide")
 
 # Tata Power Logo
-logo = Image.open("tata_power_logo.jpeg")
+logo = Image.open("tata_power_logo.jpg")
 st.image(logo, width=150)
 
 # Title
@@ -16,7 +16,7 @@ st.title("🌞 Solar Generation Monitoring Dashboard")
 st.markdown("<h5 style='text-align: right; color: gray;'>🔧 Designed by Netmetering Team | Tata Power</h5>", unsafe_allow_html=True)
 
 # Solar panel image
-solar_image = Image.open("solar_panel.jpeg")
+solar_image = Image.open("solar_panel.jpg")
 st.image(solar_image, use_column_width=True)
 
 # File uploader
