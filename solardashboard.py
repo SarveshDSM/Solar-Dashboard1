@@ -16,7 +16,7 @@ def get_base64_of_image(image_path):
 
 # ---------- Load logo and banner images ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")   # Your .jpg logo
-
+solar_image = Image.open("solar_panel.jpg")                # Your .jpg solar panel image
 
 # ---------- Centered Header with Logo and Title ----------
 st.markdown(
@@ -30,18 +30,28 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
+# ---------- Banner Image ----------
+st.image(solar_image, use_column_width=True)
 
 # ---------- Upload Excel File ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
 
 if uploaded_file:
-    # Read Excel
     try:
+        # Read Excel file into DataFrame
         df = pd.read_excel(uploaded_file)
-        df.columns = df.columns.str.strip()  # Remove whitespace from column names
+        
+        # Clean up any extra spaces in column names
+        df.columns = df.columns.str.strip()
+        
+        # Check the first few rows to ensure the data is being read correctly
+        st.write("First few rows of the data:", df.head())
+        
+        # Check the structure of the dataframe (columns, dtypes)
+        st.write("DataFrame Info:", df.info())
+        st.write("Data Types of Columns:", df.dtypes)
 
-        # Check for missing or problematic columns
+        # Check if essential columns are missing
         missing_columns = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
         for col in missing_columns:
             if col not in df.columns:
@@ -56,13 +66,10 @@ if uploaded_file:
         for col in month_cols:
             df[col] = pd.to_numeric(df[col], errors='coerce')
 
-        # Check the data types of columns
-        st.write("Data Types of Columns:", df.dtypes)
-
-        # Dropdown to select a month
+        # --- Drop down for Month Selection ---
         selected_month = st.selectbox("📅 Select Month for Analysis", options=sorted(month_cols, key=str))
 
-        # Filter and Display Results
+        # If a month is selected, perform filtering
         if selected_month:
             st.success(f"Showing results for: {selected_month}")
 
@@ -82,4 +89,5 @@ if uploaded_file:
 
     except Exception as e:
         st.error(f"Error reading the Excel file: {e}")
+
 
