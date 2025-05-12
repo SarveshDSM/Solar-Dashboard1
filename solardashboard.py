@@ -16,7 +16,7 @@ def get_base64_of_image(image_path):
 
 # ---------- Load logo and banner images ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")   # Your .jpg logo
-
+solar_image = Image.open("solar_panel.jpg")                # Your .jpg solar panel image
 
 # ---------- Centered Header with Logo and Title ----------
 st.markdown(
@@ -30,7 +30,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
+# ---------- Banner Image ----------
+st.image(solar_image, use_column_width=True)
 
 # ---------- Upload Excel File ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
@@ -39,6 +40,9 @@ if uploaded_file:
     # Read Excel
     df = pd.read_excel(uploaded_file)
     df.columns = df.columns.str.strip()  # Remove whitespace from column names
+
+    # Remove duplicate columns if any
+    df = df.loc[:, ~df.columns.duplicated()]
 
     # Identify month columns
     metadata_cols = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
@@ -64,3 +68,4 @@ if uploaded_file:
         # --- Download Buttons ---
         st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
         st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
+
