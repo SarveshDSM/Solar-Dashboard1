@@ -16,7 +16,7 @@ def get_base64_of_image(image_path):
 
 # ---------- Load logo and banner images ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")
-solar_image = Image.open("solar_panel.jpg")
+
 
 # ---------- Header ----------
 st.markdown(
@@ -30,8 +30,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- Banner Image ----------
-st.image(solar_image, use_column_width=True)
 
 # ---------- Upload Excel File ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
