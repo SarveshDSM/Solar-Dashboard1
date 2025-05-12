@@ -37,34 +37,49 @@ uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx
 
 if uploaded_file:
     # Read Excel
-    df = pd.read_excel(uploaded_file)
-    df.columns = df.columns.str.strip()  # Remove whitespace from column names
+    try:
+        df = pd.read_excel(uploaded_file)
+        df.columns = df.columns.str.strip()  # Remove whitespace from column names
 
-    # Remove duplicate columns if any
-    df = df.loc[:, ~df.columns.duplicated()]
+        # Check for missing or problematic columns
+        missing_columns = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
+        for col in missing_columns:
+            if col not in df.columns:
+                st.error(f"Missing column: {col}")
+                break
 
-    # Identify month columns
-    metadata_cols = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
-    month_cols = [col for col in df.columns if col not in metadata_cols]
+        # Clean data: handle NaN or invalid values
+        df = df.fillna(0)  # Or use df.fillna('N/A') depending on your needs
 
-    # Dropdown to select a month
-    selected_month = st.selectbox("📅 Select Month for Analysis", options=sorted(month_cols, key=str))
+        # Ensure month columns are numeric
+        month_cols = [col for col in df.columns if col not in missing_columns]
+        for col in month_cols:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Filter and Display Results
-    if selected_month:
-        st.success(f"Showing results for: {selected_month}")
+        # Check the data types of columns
+        st.write("Data Types of Columns:", df.dtypes)
 
-        # --- Zero Generation ---
-        zero_gen_df = df[df[selected_month] == 0]
-        st.markdown("### ⚠️ Consumers with Zero Generation")
-        st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', selected_month]])
+        # Dropdown to select a month
+        selected_month = st.selectbox("📅 Select Month for Analysis", options=sorted(month_cols, key=str))
 
-        # --- >50% Drop ---
-        drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
-        st.markdown("### 📉 Consumers with >50% Drop Compared to Expected Generation")
-        st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
+        # Filter and Display Results
+        if selected_month:
+            st.success(f"Showing results for: {selected_month}")
 
-        # --- Download Buttons ---
-        st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
-        st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
+            # --- Zero Generation ---
+            zero_gen_df = df[df[selected_month] == 0]
+            st.markdown("### ⚠️ Consumers with Zero Generation")
+            st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', selected_month]])
+
+            # --- >50% Drop ---
+            drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
+            st.markdown("### 📉 Consumers with >50% Drop Compared to Expected Generation")
+            st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
+
+            # --- Download Buttons ---
+            st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
+            st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
+
+    except Exception as e:
+        st.error(f"Error reading the Excel file: {e}")
 
