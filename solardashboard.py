@@ -16,7 +16,7 @@ def get_base64_of_image(image_path):
 
 # ---------- Centered Tata Power Logo and Header ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")
-solar_image = Image.open("solar_panel.jpeg")
+
 
 st.markdown(
     f"""
