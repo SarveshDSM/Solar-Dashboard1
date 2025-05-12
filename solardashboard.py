@@ -11,11 +11,11 @@ st.set_page_config(page_title="Solar Monitoring Dashboard", layout="wide")
 def get_base64_of_image(image_path):
     img = Image.open(image_path)
     buffered = BytesIO()
-    img.save(buffered, format="JPG")
+    img.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode()
 
 # ---------- Centered Tata Power Logo and Header ----------
-logo_base64 = get_base64_of_image("tata_power_logo.jpg")
+logo_base64 = get_base64_of_image("tata_power_logo.jpeg")
 
 
 st.markdown(
