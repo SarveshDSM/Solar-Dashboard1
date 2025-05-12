@@ -16,6 +16,7 @@ def get_base64_of_image(image_path):
 
 # ---------- Load logo and banner images ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")
+solar_image = Image.open("solar_panel.jpg")
 
 # ---------- Header ----------
 st.markdown(
@@ -29,6 +30,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# ---------- Banner Image ----------
+st.image(solar_image, use_column_width=True)
 
 # ---------- Upload Excel File ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
@@ -71,7 +74,7 @@ if uploaded_file:
                 st.success(f"Showing results for: {selected_month}")
 
                 # Use columns layout for side-by-side views
-                col1, col2, col3 = st.columns(3)
+                col1, col2 = st.columns(2)
 
                 # --- Zero Generation ---
                 zero_gen_df = df[df[selected_month] == 0]
@@ -93,21 +96,9 @@ if uploaded_file:
                     # Download Button
                     st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
 
-                # --- Summary Information ---
-                with col3:
-                    st.markdown("### 📊 Summary of Key Statistics")
-
-                    # Show some summary stats like total number of consumers, average generation, etc.
-                    total_consumers = len(df)
-                    avg_generation = df[selected_month].mean()
-
-                    st.write(f"Total Consumers: {total_consumers}")
-                    st.write(f"Average Generation for {selected_month}: {avg_generation:.2f} kWh")
-
-                    # You can add more statistics as per your needs, e.g. total capacity, etc.
-
     except Exception as e:
         st.error(f"Error reading the Excel file: {e}")
+
 
 
 
