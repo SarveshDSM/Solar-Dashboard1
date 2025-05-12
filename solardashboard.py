@@ -1,35 +1,59 @@
 import streamlit as st
 import pandas as pd
+from PIL import Image
+
+# Page configuration
+st.set_page_config(page_title="Solar Monitoring Dashboard", layout="wide")
+
+# Tata Power Logo
+logo = Image.open("tata_power_logo.png")
+st.image(logo, width=150)
 
 # Title
-st.title("Solar Generation Monitoring Dashboard")
+st.title("🌞 Solar Generation Monitoring Dashboard")
 
-# File upload
-uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"])
+# Designed by Netmetering Team (top placement)
+st.markdown("<h5 style='text-align: right; color: gray;'>🔧 Designed by Netmetering Team | Tata Power</h5>", unsafe_allow_html=True)
+
+# Solar panel image
+solar_image = Image.open("solar_panel.jpg")
+st.image(solar_image, use_column_width=True)
+
+# File uploader
+uploaded_file = st.file_uploader("📤 Upload your Solar Generation Excel File", type=["xlsx"])
 
 if uploaded_file:
+    # Read and clean Excel
     df = pd.read_excel(uploaded_file)
+    df.columns = df.columns.str.strip()
 
-    # Extract month columns (assuming the months start after a fixed set of metadata columns)
+    # Identify month columns
     metadata_cols = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
     month_cols = [col for col in df.columns if col not in metadata_cols]
 
-    # Let user pick a month
-    selected_month = st.selectbox("Select Month to Analyze", month_cols)
+    # Show available months
+    st.markdown("### 📅 Available Months")
+    st.write(", ".join(month_cols))
 
-    if selected_month:
-        st.subheader(f"Analysis for: {selected_month}")
+    # Month input
+    entered_month = st.text_input("Enter Month for Analysis (e.g., Apr-24):")
 
-        # Zero generation
-        zero_gen_df = df[df[selected_month] == 0]
-        st.markdown("### Consumers with Zero Generation")
-        st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', selected_month]])
+    if entered_month:
+        if entered_month not in df.columns:
+            st.error(f"❌ Month '{entered_month}' not found. Please check the available months above.")
+        else:
+            st.success(f"Showing results for: {entered_month}")
 
-        # Drop > 50% compared to expected generation
-        drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
-        st.markdown("### Consumers with >50% Drop in Generation Compared to Expected")
-        st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
+            # Zero generation filter
+            zero_gen_df = df[df[entered_month] == 0]
+            st.markdown("### ⚠️ Consumers with Zero Generation")
+            st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', entered_month]])
 
-        # Downloadable reports
-        st.download_button("Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
-        st.download_button("Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
+            # >50% drop filter
+            drop_df = df[df[entered_month] < 0.5 * df['Expected Solar Generation']]
+            st.markdown("### 📉 Consumers with >50% Drop Compared to Expected Generation")
+            st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', entered_month]])
+
+            # Download buttons
+            st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
+            st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
