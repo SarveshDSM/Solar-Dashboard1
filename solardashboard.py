@@ -15,9 +15,7 @@ st.title("🌞 Solar Generation Monitoring Dashboard")
 # Designed by Netmetering Team (top placement)
 st.markdown("<h5 style='text-align: right; color: gray;'>🔧 Designed by Netmetering Team | Tata Power</h5>", unsafe_allow_html=True)
 
-# Solar panel image
-solar_image = Image.open("solar_panel.jpg")
-st.image(solar_image, use_column_width=True)
+
 
 # File uploader
 uploaded_file = st.file_uploader("📤 Upload your Solar Generation Excel File", type=["xlsx"])
