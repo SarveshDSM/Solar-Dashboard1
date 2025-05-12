@@ -30,9 +30,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ---------- Optional Banner Image ----------
-st.image(solar_image, use_column_width=True)
-
 # ---------- File Upload ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File", type=["xlsx"])
 
