@@ -16,7 +16,7 @@ def get_base64_of_image(image_path):
 
 # ---------- Load logo and banner images ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")
-
+solar_image = Image.open("solar_panel.jpg")
 
 # ---------- Header ----------
 st.markdown(
@@ -30,7 +30,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
+# ---------- Banner Image ----------
+st.image(solar_image, use_column_width=True)
 
 # ---------- Upload Excel File ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
@@ -70,7 +71,10 @@ if uploaded_file:
             selected_month = st.selectbox("📅 Select Month for Analysis", options=month_cols)
 
             if selected_month:
-                st.success(f"Showing results for: {selected_month}")
+                # Format selected month to remove time part
+                formatted_month = pd.to_datetime(selected_month).strftime('%Y-%m')
+
+                st.success(f"Showing results for: {formatted_month}")
 
                 # --- Zero Generation ---
                 zero_gen_df = df[df[selected_month] == 0]
@@ -82,7 +86,7 @@ if uploaded_file:
                 drop_count = len(drop_df)
 
                 # Show summary above the tables
-                st.markdown(f"### Summary for {selected_month}")
+                st.markdown(f"### Summary for {formatted_month}")
                 st.write(f"Total Zero Generation Cases: {zero_gen_count}")
                 st.write(f"Total >50% Drop Cases (excluding zero cases): {drop_count}")
 
