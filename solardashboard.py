@@ -1,94 +1,92 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 from PIL import Image
 import base64
 from io import BytesIO
 
+# Set Streamlit page config
 st.set_page_config(page_title="Solar Monitoring Dashboard", layout="wide")
 
-# Utility: convert image to base64
+# ---------- Utility: Image to base64 ----------
 def get_base64_of_image(image_path):
     img = Image.open(image_path)
     buffered = BytesIO()
     img.save(buffered, format="JPEG")
     return base64.b64encode(buffered.getvalue()).decode()
 
-# Load images
+# ---------- Load logo and banner images ----------
 logo_base64 = get_base64_of_image("tata_power_logo.jpg")
 
 
-# Header
-st.markdown(f"""
-<div style='text-align: center;'>
-    <img src='data:image/jpeg;base64,{logo_base64}' width='150'/>
-    <h2 style='margin-top: 10px;'>🌞 Solar Generation Monitoring Dashboard</h2>
-    <p style='color: gray;'>🔧 Netmetering Team | Tata Power</p>
-</div>
-""", unsafe_allow_html=True)
+# ---------- Header ----------
+st.markdown(
+    f"""
+    <div style='text-align: center;'>
+        <img src='data:image/jpeg;base64,{logo_base64}' width='200'/>
+        <h1 style='margin-top: 10px;'>🌞 Solar Generation Monitoring Dashboard</h1>
+        <h5 style='color: gray;'>🔧 Designed by Netmetering Team | Tata Power</h5>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
 
 
-
-# Upload
+# ---------- Upload Excel File ----------
 uploaded_file = st.file_uploader("📤 Upload Solar Generation Excel File (.xlsx)", type=["xlsx"])
 
 if uploaded_file:
     try:
+        # Read Excel with proper header
         df = pd.read_excel(uploaded_file)
-        df.columns = df.columns.str.strip()
-        df = df.dropna(axis=1, how='all')
+
+        # Clean column names
+        df.columns = df.columns.astype(str).str.strip()
+
+        # Remove duplicate or empty columns
         df = df.loc[:, ~df.columns.duplicated()]
+        df = df.dropna(axis=1, how='all')
 
-        # Identify columns
-        fixed_cols = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
-        month_cols = [col for col in df.columns if col not in fixed_cols]
-        df[month_cols] = df[month_cols].apply(pd.to_numeric, errors='coerce')
-        df = df.fillna(0)
+        # Expected columns
+        key_cols = ['ca no', 'Solar Capacity', 'Expected Solar Generation', 'catr', 'CONSUMER Name']
+        month_cols = [col for col in df.columns if col not in key_cols]
 
-        selected_month = st.selectbox("📅 Select Month for Analysis", options=sorted(month_cols, key=str))
-        if selected_month:
-            st.success(f"Showing results for: {selected_month}")
+        # Sort month columns (just in case)
+        month_cols = sorted(month_cols, key=lambda x: pd.to_datetime(x, errors='coerce') if '-' in x else x)
 
-            # KPIs
-            col1, col2, col3 = st.columns(3)
-            total_generation = df[selected_month].sum()
-            expected_total = df['Expected Solar Generation'].sum()
-            avg_capacity = df['Solar Capacity'].mean()
+        # Check all required columns
+        missing = [col for col in key_cols if col not in df.columns]
+        if missing:
+            st.error(f"Missing required columns: {missing}")
+        else:
+            # Fill NaN with 0
+            df = df.fillna(0)
 
-            col1.metric("Total Generation (kWh)", f"{total_generation:,.0f}")
-            col2.metric("Expected Generation (kWh)", f"{expected_total:,.0f}")
-            col3.metric("Avg Solar Capacity (kWp)", f"{avg_capacity:,.2f}")
+            # Ensure month columns are numeric
+            for col in month_cols:
+                df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
 
-            # Bar chart of underperformers
-            drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
-            fig = px.bar(drop_df, x='CONSUMER Name', y=selected_month, color='Solar Capacity',
-                         title="📉 Underperformers (<50% Expected)", labels={selected_month: 'Generation'},
-                         height=400)
-            fig.update_layout(xaxis_tickangle=-45)
+            # --- Select Month ---
+            selected_month = st.selectbox("📅 Select Month for Analysis", options=month_cols)
 
-            st.plotly_chart(fig, use_container_width=True)
+            if selected_month:
+                st.success(f"Showing results for: {selected_month}")
 
-            # Tables in two columns
-            st.markdown("### 📊 Consumer-Level Reports")
-            col1, col2 = st.columns(2)
+                # --- Zero Generation ---
+                zero_gen_df = df[df[selected_month] == 0]
+                st.markdown("### ⚠️ Consumers with Zero Generation")
+                st.dataframe(zero_gen_df[['ca no', 'CONSUMER Name', selected_month]])
 
-            with col1:
-                st.markdown("#### ⚠️ Zero Generation Consumers")
-                zero_df = df[df[selected_month] == 0]
-                st.dataframe(zero_df[['ca no', 'CONSUMER Name', selected_month]])
-                st.download_button("⬇️ Download Zero Report", zero_df.to_csv(index=False), file_name="zero_generation.csv")
-
-            with col2:
-                st.markdown("#### 📉 >50% Drop Consumers")
+                # --- >50% Drop ---
+                drop_df = df[df[selected_month] < 0.5 * df['Expected Solar Generation']]
+                st.markdown("### 📉 Consumers with >50% Drop Compared to Expected Generation")
                 st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
+
+                # --- Download Reports ---
+                st.download_button("⬇️ Download Zero Generation Report", zero_gen_df.to_csv(index=False), file_name="zero_generation.csv")
                 st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
 
-            # Expander for raw data
-            with st.expander("🔍 Full Dataset Preview"):
-                st.dataframe(df)
-
     except Exception as e:
-        st.error(f"❌ Error reading file: {e}")
+        st.error(f"Error reading the Excel file: {e}")
 
 
 
