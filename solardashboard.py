@@ -101,6 +101,14 @@ if uploaded_file:
                 # --- >50% Drop ---
                 with col2:
                     st.markdown("### 📉 Consumers with >50% Drop Compared to Expected Generation")
+                    st.dataframe(drop_df[['ca no', 'CONSUMER Name', 'Expected Solar Generation', selected_month]])
+
+                    # Download Button
+                    st.download_button("⬇️ Download Drop Report", drop_df.to_csv(index=False), file_name="drop_report.csv")
+
+    except Exception as e:
+        st.error(f"Error reading the Excel file: {e}")
+
 
 
 
